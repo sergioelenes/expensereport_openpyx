@@ -13,4 +13,5 @@ pd.DataFrame(df)
 df.style.format({'Amount': "${:,.2f}"})
 pivot = df.pivot_table(values='Amount', index='Concept', columns='Month', aggfunc='sum', fill_value="-", margins=True, margins_name='Total')
 
-print(df)
+dflogstotal = pd.read_excel('expensedb.xlsx', sheet_name='detail')
+print(dflogstotal)
