@@ -6,6 +6,7 @@ import pandas as pd
 
 app = Flask(__name__)
 app.secret_key = "Macarenas"
+basic_auth = BasicAuth(app)
 app.config['BASIC_AUTH_USERNAME'] = 'brad'
 app.config['BASIC_AUTH_PASSWORD'] = 'keonda'
 basic_auth = BasicAuth(app)
