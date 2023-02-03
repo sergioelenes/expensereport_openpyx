@@ -1,31 +1,28 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file
 from flask_basicauth import BasicAuth
-import openpyxl
+from flask_sqlalchemy import SQLAlchemy
+import sqlalchemy
 import pandas as pd
 
-
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///dbases/expensess.sqlite3'
+db = SQLAlchemy(app)
 app.secret_key = "Macarenas"
 basic_auth = BasicAuth(app)
 app.config['BASIC_AUTH_USERNAME'] = 'brad'
 app.config['BASIC_AUTH_PASSWORD'] = 'keonda'
-basic_auth = BasicAuth(app)
 
-
-
-def datainput(month, concept, amount):
-    book = openpyxl.load_workbook('expensedb.xlsx')
-    detailsheet = book['detail']
-    detailsheet.append([month,concept,float(amount)])
-    book.save('expensedb.xlsx')
-
+class expenses(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        month = db.Column(db.String(50))
+        concept = db.Column(db.String(50))
+        amount = db.Column(db.Float)
+        notes = db.Column(db.String(50))
 
 @app.route("/", methods=['GET','POST'])
 @basic_auth.required
 def loginroute():
         return render_template('index.html')
-
-
 
 @app.route("/datain", methods=['POST'])
 def datain():
@@ -42,40 +39,69 @@ def datain():
         if amount == "":
                 flash('information incomplete, please try again')
                 return render_template('index.html')  
-        datainput(month, concept, amount)
+        datainput = expenses(month = request.form['month'], concept = request.form['concept'],amount = request.form['amount'], notes = request.form['notes'])
+        db.session.add(datainput)
+        db.session.commit()
         return render_template('index.html')
-    
 
 @app.route("/reports", methods=['GET','POST'])
 @basic_auth.required
 def reports():
-        book = openpyxl.load_workbook('expensedb.xlsx')
-        book.save('expensedb.xlsx')
         return render_template('reports.html')
 
 @app.route("/year", methods=['GET','POST'])
 @basic_auth.required
 def year():
-        df = pd.read_excel('expensedb.xlsx', sheet_name='detail')
-        pivot = df.pivot_table(values='Amount', index='Concept', columns='Month', aggfunc='sum', fill_value="-", margins=True, margins_name='Total')
-        pivot.style.format({'Amount':'${0:,0f}'})
-        return render_template('reports.html', tables=[pivot.to_html()], titles=[''] )
+        try:
+                engine =  sqlalchemy.create_engine('sqlite:///dbases/expensess.sqlite3')
+                df = pd.read_sql('expenses', engine)
+                df.style.format({'amount':'${.2f}'})
+                pivot = df.pivot_table(values='amount', index='concept', columns='month', aggfunc='sum', fill_value="-", margins=True, margins_name='Total')
+                #pivot.style.format({'amount':'${00:,00f}'})
+                df.to_csv('dbases/alldata.csv', header=True, index=False)
+                return render_template('reports.html', tables=[pivot.to_html()], titles=[''] )
+        except ValueError:
+                return render_template('reports.html')
+
 
 @app.route("/bymonth", methods=['GET','POST'])
 @basic_auth.required
 def bymonth():
         if request.method == 'POST':
+                engine =  sqlalchemy.create_engine('sqlite:///dbases/expensess.sqlite3')
                 mess = request.form['elmess']
-                dflogstotal = pd.read_excel('expensedb.xlsx', sheet_name='detail', index_col=1)
-                pormes = dflogstotal[(dflogstotal['Month']==mess)]
+                dflogstotal = pd.read_sql('expenses', engine, index_col=3)
+                pormes = dflogstotal[(dflogstotal['month']==mess)]
                 return render_template('reports.html', tables=[pormes.to_html()], titles=[''] )
 
-@app.route("/data", methods=['GET','POST'])
+@app.route("/alldata", methods=['GET','POST'])
 @basic_auth.required
-def data():
-        dflogstotal = pd.read_excel('expensedb.xlsx', sheet_name='detail')
-        return render_template('reports.html', tables=[dflogstotal.to_html()], titles=[''] )
+def alldata():
+        expenselist = expenses.query.all()
+        engine =  sqlalchemy.create_engine('sqlite:///dbases/expensess.sqlite3')
+        df = pd.read_sql('expenses', engine)
+        df.to_csv('dbases/alldata.csv', header=True, index=False)
+        return render_template('alldata.html', expenses=expenselist)
+
+@app.route("/delete/<id>")
+@basic_auth.required
+def delete(id):
+        expense = expenses.query.filter_by(id=int(id)).delete()
+        db.session.commit()
+        return redirect(url_for('alldata'))
+
+@app.route('/downloadxls')
+@basic_auth.required
+def downloadxls ():
+        alldata = "dbases/alldata.csv"
+        return send_file(alldata, as_attachment=True)
+
+@app.route('/downloadsql')
+@basic_auth.required
+def downloadsql ():
+        alldata = "dbases/expensess.sqlite3"
+        return send_file(alldata, as_attachment=True)
 
 
 if __name__=='__main__':
-    app.run(debug=True)
+        app.run(debug=True)

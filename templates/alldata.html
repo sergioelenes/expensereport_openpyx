@@ -17,41 +17,24 @@
     <div class="container-fluid bg-light text-black-50 p-3">
       <div class="btn-group" role="group" aria-label="Basic mixed styles example">
         <a href="/"><button type="button" class="btn btn-success">Home</button></a>
-        <a href="/year"><button type="button" class="btn btn-success">Year</button></a>
-        <a href="/alldata"><button type="button" class="btn btn-success">AllData</button></a>
-      </div>
-      <div class="col-auto">
-        <form action="/bymonth" method="POST">
-            <fieldset enabled>
-                <label for="autoSizingSelect" class="col-form-label-sm" for="autoSizingInput"></label>
-                <select id="autoSizingSelect" class="form-select" name="elmess">
-                  <option>Month Select</option>
-                  <option>01.January</option>
-                  <option>02.February</option>
-                  <option>03.March</option>
-                  <option>04.April</option>
-                  <option>05.May</option>
-                  <option>06.June</option>
-                  <option>07.July</option>
-                  <option>08.August</option>
-                  <option>09.September</option>
-                  <option>10.October</option>
-                  <option>11.November</option>
-                  <option>12.December</option>
-                </select>
-              <button type="submit" class="btn btn-success">Submit</button>
-            </fieldset>
-          </form>
-        </div>
-    </div>
-    
 
-    <div class="container">
-      <div class="rendered_html">
-          <table>
-            {% for table in tables%}
-            {{titles[loop.index]}}
-              {{table | safe}}
+        <a href="/reports"><button type="button" class="btn btn-success">Back to Reports</button></a>
+      </div>
+    </div>
+    <div class="position-relative">
+      <div class="container text-black p-4">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Month</th>
+              <th scope="col">Concept</th>
+              <th scope="col">Amount</th>
+              <th scope="col">Notes</th>
+            </tr>
+              {% for expense in expenses%}
+              <tr>
+                <td>{{expense.month}}</td><td>{{expense.concept}}</td><td>{{expense.amount}}</td><td>{{expense.notes}}</td><td><a href="/delete/{{expense.id}}"><button class="btn btn-danger sm">Delete</button></a></td>
+              </tr>
               {% endfor %}
           </table>
       </div>
@@ -59,7 +42,9 @@
     <div class="fixed-bottom ">
       <div class="container text-center margin-bottom">
         <h1><a href="/downloadxls"><i class="bi bi-file-earmark-excel"></i></h1>
+        
       </div>
   </div>
+
   </body>
 </html>
