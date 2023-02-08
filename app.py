@@ -61,7 +61,7 @@ def year():
         try:
                 df = pd.read_excel('expensedb.xlsx', sheet_name='detail')
                 pivot = df.pivot_table(values='Amount', index='Concept', columns='Month', aggfunc='sum', fill_value="-", margins=True, margins_name='Total')
-                pivot.style.format({'Amount':'${0:,0f}'})
+                #pivott = pivot.style.format({"Amount":"{:,d}"})
                 return render_template('reports.html', tables=[pivot.to_html()], titles=[''] )
         except ValueError:
                 return render_template('reports.html')
