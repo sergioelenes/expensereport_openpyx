@@ -1,17 +1,23 @@
-import openpyxl
-import pandas as pd
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+from app import Expense  # Asegúrate de importar tu modelo Expense
 
-from pathlib import Path
-import os
+# Configura el motor para conectarse a la base de datos SQLite
+engine = create_engine('sqlite:///instance/expenses.db')
 
+# Crea una sesión de SQLAlchemy
+Session = sessionmaker(bind=engine)
+session = Session()
 
-courrent_dir = os.getcwd()
-dabase = 'expensedb.xlsx'
-print(os.path.exists(dabase))
-df = pd.read_excel('expensedb.xlsx', sheet_name='detail')
-pd.DataFrame(df)
-df.style.format({'Amount': "${:,.2f}"})
-pivot = df.pivot_table(values='Amount', index='Concept', columns='Month', aggfunc='sum', fill_value="-", margins=True, margins_name='Total')
+# Ejemplo de consulta para obtener todos los gastos para un concepto y mes específicos
+concept_name = 'Auto fuel'
+month_name = 'January'
 
-dflogstotal = pd.read_excel('expensedb.xlsx', sheet_name='detail')
-print(dflogstotal)
+expenses = session.query(Expense).filter_by(concept=concept_name, month=month_name).all()
+
+# Imprime los resultados
+for expense in expenses:
+    print(f"Concept: {expense.concept}, Month: {expense.month}, Amount: {expense.amount}, Notes: {expense.notes}")
+
+# Cierra la sesión
+session.close()
